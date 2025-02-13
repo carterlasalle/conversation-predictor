@@ -11,6 +11,7 @@ services:
       - ./frontend:/app
       - /app/node_modules
       - /app/.next
+      - yarn-cache:/usr/local/share/.cache/yarn
     environment:
       - NODE_ENV=development
       - NEXT_PUBLIC_WEBSOCKET_URL=ws://localhost:8001/ws
@@ -38,4 +39,7 @@ services:
       - CORS_ORIGINS=["http://localhost:3000"]
       - ALLOWED_HOSTS=["localhost", "127.0.0.1"]
     env_file:
-      - ./server/.env 
+      - ./server/.env
+
+volumes:
+  yarn-cache: 
