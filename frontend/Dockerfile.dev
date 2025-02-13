@@ -6,13 +6,14 @@ WORKDIR /app
 RUN apt-get update && apt-get install -y \
     build-essential \
     python3 \
+    git \
     && rm -rf /var/lib/apt/lists/*
 
 # Enable corepack and prepare Yarn
-RUN corepack enable && corepack prepare yarn@4.1.0 --activate
+RUN corepack enable && corepack prepare yarn@4.6.0 --activate
 
-# Copy package files
-COPY package.json .yarnrc.yml ./
+# Copy dependency files first
+COPY package.json yarn.lock .yarnrc.yml ./
 
 # Install dependencies
 RUN yarn install
