@@ -7,20 +7,23 @@ RUN apt-get update && apt-get install -y \
     git \
     && rm -rf /var/lib/apt/lists/*
 
-# Install yarn
+# Enable and prepare yarn
 RUN corepack enable && corepack prepare yarn@stable --activate
 
 # Copy package files
 COPY package.json yarn.lock ./
 
 # Install dependencies
-RUN yarn install
+RUN yarn install --frozen-lockfile
 
 # Copy source code
 COPY . .
 
+# Build the application
+RUN yarn build
+
 # Expose port
 EXPOSE 3000
 
-# Start development server
+# Start the development server
 CMD ["yarn", "dev"] 

@@ -10,9 +10,12 @@ services:
     volumes:
       - ./frontend:/app
       - /app/node_modules
+      - /app/.next
     environment:
       - NODE_ENV=development
       - NEXT_PUBLIC_WEBSOCKET_URL=ws://localhost:8001/ws
+      - NEXT_PUBLIC_API_URL=http://localhost:8001
+      - WATCHPACK_POLLING=true
     depends_on:
       - backend
 
