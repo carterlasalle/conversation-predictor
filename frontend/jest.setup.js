@@ -2,32 +2,24 @@
 import '@testing-library/jest-dom'
 
 // Mock IntersectionObserver
-class IntersectionObserver {
-  observe = jest.fn()
-  disconnect = jest.fn()
-  unobserve = jest.fn()
+class MockIntersectionObserver {
+  observe() {}
+  unobserve() {}
+  disconnect() {}
 }
 
-Object.defineProperty(window, 'IntersectionObserver', {
-  writable: true,
-  configurable: true,
-  value: IntersectionObserver,
-})
+global.IntersectionObserver = MockIntersectionObserver
 
 // Mock ResizeObserver
-class ResizeObserver {
-  observe = jest.fn()
-  disconnect = jest.fn()
-  unobserve = jest.fn()
+class MockResizeObserver {
+  observe() {}
+  unobserve() {}
+  disconnect() {}
 }
 
-Object.defineProperty(window, 'ResizeObserver', {
-  writable: true,
-  configurable: true,
-  value: ResizeObserver,
-})
+global.ResizeObserver = MockResizeObserver
 
-// Mock matchMedia
+// Mock window.matchMedia
 Object.defineProperty(window, 'matchMedia', {
   writable: true,
   value: jest.fn().mockImplementation(query => ({
@@ -40,6 +32,27 @@ Object.defineProperty(window, 'matchMedia', {
     removeEventListener: jest.fn(),
     dispatchEvent: jest.fn(),
   })),
+})
+
+// Mock scrollTo
+window.scrollTo = jest.fn()
+
+// Suppress console errors during tests
+const originalError = console.error
+beforeAll(() => {
+  console.error = (...args) => {
+    if (
+      typeof args[0] === 'string' &&
+      args[0].includes('Warning: ReactDOM.render is no longer supported')
+    ) {
+      return
+    }
+    originalError.call(console, ...args)
+  }
+})
+
+afterAll(() => {
+  console.error = originalError
 })
 
 // Mock WebSocket

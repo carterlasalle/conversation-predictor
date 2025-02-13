@@ -10,7 +10,7 @@ interface WebSocketState {
   sendMessage: (message: string) => void;
 }
 
-const WEBSOCKET_URL = process.env.NEXT_PUBLIC_WEBSOCKET_URL || 'ws://localhost:8000';
+const WEBSOCKET_URL = process.env.NEXT_PUBLIC_WEBSOCKET_URL || 'ws://localhost:8001';
 
 export const useWebSocket = create<WebSocketState>((set, get) => ({
   socket: null,

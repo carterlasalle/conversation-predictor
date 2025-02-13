@@ -40,8 +40,8 @@ A real-time conversation analysis and prediction system that uses advanced langu
 
 The application will be available at:
 - Frontend: http://localhost:3000
-- Backend: http://localhost:8000
-- API Documentation: http://localhost:8000/docs
+- Backend: http://localhost:8001
+- API Documentation: http://localhost:8001/docs
 
 ## Development
 
