@@ -1,0 +1,38 @@
+version: '3.8'
+
+services:
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.dev
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    environment:
+      - NODE_ENV=development
+      - NEXT_PUBLIC_WEBSOCKET_URL=ws://localhost:8000/ws
+    depends_on:
+      - backend
+
+  backend:
+    build:
+      context: ./server
+      dockerfile: Dockerfile.dev
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./server:/app
+    environment:
+      - ENVIRONMENT=development
+      - DEBUG=true
+      - HOST=0.0.0.0
+      - PORT=8000
+      - RELOAD=true
+      - WORKERS=1
+      - LOG_LEVEL=debug
+      - CORS_ORIGINS=["http://localhost:3000"]
+      - ALLOWED_HOSTS=["localhost", "127.0.0.1"]
+    env_file:
+      - ./server/.env 
