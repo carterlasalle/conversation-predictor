@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { io, Socket } from 'socket.io-client';
 import { create } from 'zustand';
 
@@ -86,7 +87,7 @@ export function useWebSocketEvent<T>(
 ) {
   const { socket } = useWebSocket();
 
-  useEffect(() => {
+  useEffect(() => { 
     if (!socket) return;
 
     socket.on(eventName, callback);

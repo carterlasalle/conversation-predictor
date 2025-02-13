@@ -7,22 +7,17 @@ RUN apt-get update && apt-get install -y \
     git \
     && rm -rf /var/lib/apt/lists/*
 
-# Enable and prepare yarn
+# Enable corepack and set up yarn
 RUN corepack enable && corepack prepare yarn@4.6.0 --activate
 
 # Copy package files
-COPY package.json yarn.lock ./
+COPY package.json yarn.lock .yarnrc.yml ./
 
-# Clean yarn cache and install dependencies
-RUN yarn cache clean && \
-    yarn set version 4.6.0 && \
-    yarn install
+# Install dependencies
+RUN yarn install
 
 # Copy source code
 COPY . .
-
-# Build the application
-RUN yarn build
 
 # Expose port
 EXPOSE 3000

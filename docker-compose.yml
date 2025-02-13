@@ -11,12 +11,13 @@ services:
       - ./frontend:/app
       - /app/node_modules
       - /app/.next
-      - yarn-cache:/usr/local/share/.cache/yarn
+      - /app/.yarn
     environment:
       - NODE_ENV=development
       - NEXT_PUBLIC_WEBSOCKET_URL=ws://localhost:8001/ws
       - NEXT_PUBLIC_API_URL=http://localhost:8001
       - WATCHPACK_POLLING=true
+      - CHOKIDAR_USEPOLLING=true
     depends_on:
       - backend
 

@@ -3,6 +3,7 @@ import { render as rtlRender } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { WebSocketProvider } from '@/contexts/WebSocketContext'
 
+
 // Mock WebSocket for all tests
 class MockWebSocket {
   onopen: (() => void) | null = null
