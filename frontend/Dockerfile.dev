@@ -11,13 +11,16 @@ RUN apt-get update && apt-get install -y \
 RUN corepack enable && corepack prepare yarn@4.6.0 --activate
 
 # Copy package files
-COPY package.json yarn.lock .yarnrc.yml ./
+COPY package.json .yarnrc.yml ./
 
 # Install dependencies
 RUN yarn install
 
 # Copy source code
 COPY . .
+
+# Build the application
+RUN yarn build
 
 # Expose port
 EXPOSE 3000
