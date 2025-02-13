@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   frontend:
     build:
@@ -10,18 +8,14 @@ services:
     volumes:
       - ./frontend:/app
       - /app/node_modules
-      - /app/.next
-      - /app/.yarn
     environment:
       - NODE_ENV=development
-      - NEXT_PUBLIC_WEBSOCKET_URL=ws://localhost:8001/ws
       - NEXT_PUBLIC_API_URL=http://localhost:8001
-      - WATCHPACK_POLLING=true
-      - CHOKIDAR_USEPOLLING=true
+      - NEXT_PUBLIC_WS_URL=ws://localhost:8001
     depends_on:
-      - backend
+      - server
 
-  backend:
+  server:
     build:
       context: ./server
       dockerfile: Dockerfile.dev
@@ -29,18 +23,8 @@ services:
       - "8001:8001"
     volumes:
       - ./server:/app
-    environment:
-      - ENVIRONMENT=development
-      - DEBUG=true
-      - HOST=0.0.0.0
-      - PORT=8001
-      - RELOAD=true
-      - WORKERS=1
-      - LOG_LEVEL=debug
-      - CORS_ORIGINS=["http://localhost:3000"]
-      - ALLOWED_HOSTS=["localhost", "127.0.0.1"]
     env_file:
       - ./server/.env
-
-volumes:
-  yarn-cache: 
+    environment:
+      - PYTHONUNBUFFERED=1
+      - ENVIRONMENT=development 

@@ -1,23 +1,23 @@
 # Conversation Predictor
 
-A real-time conversation analysis and prediction system that uses advanced language models to analyze conversations and predict potential outcomes.
+A real-time conversation prediction system using Monte Carlo Tree Search (MCTS) and large language models to predict and analyze conversation flows.
 
 ## Features
 
-- Real-time conversation analysis using WebSocket communication
-- Interactive visualization of conversation states using D3.js
-- Monte Carlo tree search for conversation path prediction
-- Modern, responsive UI built with Next.js and TailwindCSS
-- Scalable backend architecture using FastAPI and WebSocket
+- Real-time conversation prediction using MCTS
+- WebSocket-based communication between frontend and backend
+- Integration with OpenRouter API for LLM access
+- Interactive visualization of conversation trees
+- Configurable conversation parameters and model settings
 
 ## Prerequisites
 
 - Docker and Docker Compose
-- Node.js 20.x (for local development)
+- Node.js 20.x LTS (for local development)
 - Python 3.11 (for local development)
-- Yarn package manager
+- OpenRouter API key
 
-## Getting Started
+## Quick Start
 
 1. Clone the repository:
    ```bash
@@ -25,55 +25,41 @@ A real-time conversation analysis and prediction system that uses advanced langu
    cd conversation-predictor
    ```
 
-2. Create environment files:
+2. Set up environment variables:
    ```bash
-   # Backend
+   # Copy example environment files
    cp server/.env.example server/.env
-   # Frontend
-   cp frontend/.env.example frontend/.env
+   
+   # Edit server/.env and add your OpenRouter API key
    ```
 
-3. Start the development environment:
+3. Build and start the containers:
    ```bash
-   docker-compose up
+   docker-compose up --build
    ```
 
-The application will be available at:
-- Frontend: http://localhost:3000
-- Backend: http://localhost:8001
-- API Documentation: http://localhost:8001/docs
+4. Access the application:
+   - Frontend: http://localhost:3000
+   - Backend API: http://localhost:8001
 
-## Development
+## Development Setup
 
-### Frontend Development
+### Frontend (Next.js + TypeScript)
 
-The frontend is built with Next.js and uses:
-- TailwindCSS for styling
-- D3.js for visualizations
-- Socket.io for real-time communication
-- Framer Motion for animations
-
-To run the frontend locally:
 ```bash
 cd frontend
 yarn install
 yarn dev
 ```
 
-### Backend Development
+### Backend (FastAPI + Python)
 
-The backend is built with FastAPI and uses:
-- WebSocket for real-time communication
-- OpenRouter API for language model integration
-- Monte Carlo Tree Search for path prediction
-
-To run the backend locally:
 ```bash
 cd server
 python -m venv venv
 source venv/bin/activate  # or `venv\Scripts\activate` on Windows
-pip install -r requirements.txt
-python start.py
+uv pip install -r requirements.txt
+uvicorn main:app --reload
 ```
 
 ## Project Structure
@@ -81,17 +67,26 @@ python start.py
 ```
 .
 ├── frontend/                # Next.js frontend application
-│   ├── components/         # React components
-│   ├── lib/               # Utility functions and hooks
-│   ├── pages/             # Next.js pages
-│   └── styles/            # CSS and TailwindCSS styles
+│   ├── src/                # Source code
+│   ├── public/             # Static files
+│   └── package.json        # Dependencies and scripts
 ├── server/                 # FastAPI backend application
-│   ├── api/               # API endpoints
-│   ├── core/              # Core functionality
-│   ├── models/            # Data models
-│   └── services/          # Business logic
-└── docker-compose.yml     # Docker composition file
+│   ├── main.py            # Application entry point
+│   ├── requirements.txt    # Python dependencies
+│   └── .env               # Environment variables
+└── docker-compose.yml      # Docker services configuration
 ```
+
+## Configuration
+
+### Frontend Environment Variables
+
+- `NEXT_PUBLIC_API_URL`: Backend API URL
+- `NEXT_PUBLIC_WS_URL`: WebSocket server URL
+
+### Backend Environment Variables
+
+See `server/.env.example` for all available configuration options.
 
 ## Contributing
 
@@ -107,7 +102,6 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## Acknowledgments
 
-- OpenRouter API for providing access to various language models
-- The FastAPI team for the excellent web framework
-- The Next.js team for the React framework
-- The D3.js team for the visualization library 
+- OpenRouter for providing LLM API access
+- FastAPI for the backend framework
+- Next.js for the frontend framework 

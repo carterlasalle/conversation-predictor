@@ -1,120 +1,92 @@
 """
-WebSocket server for Social Stockfish.
+WebSocket server for Social Stockfish using socket.io.
 """
 
 import asyncio
 import json
 import logging
 from typing import Dict, Set, Any, Optional
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect
+from fastapi import FastAPI
 from pydantic import BaseModel
 import numpy as np
+import socketio
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+# Create FastAPI app
 app = FastAPI()
 
-class ConnectionManager:
-    """Manage WebSocket connections."""
+# Create Socket.IO server
+sio = socketio.AsyncServer(
+    async_mode='asgi',
+    cors_allowed_origins=['http://localhost:3000']
+)
 
-    def __init__(self):
-        self.active_connections: Set[WebSocket] = set()
-        self.user_data: Dict[WebSocket, Dict[str, Any]] = {}
+# Wrap with ASGI app
+socket_app = socketio.ASGIApp(sio, app)
 
-    async def connect(self, websocket: WebSocket):
-        """Connect a client."""
-        await websocket.accept()
-        self.active_connections.add(websocket)
-        self.user_data[websocket] = {
-            "conversation_history": [],
-            "goal": None,
-            "analysis_results": []
-        }
-        logger.info(f"Client connected. Total connections: {len(self.active_connections)}")
+# Store client data
+client_data: Dict[str, Dict[str, Any]] = {}
 
-    def disconnect(self, websocket: WebSocket):
-        """Disconnect a client."""
-        self.active_connections.remove(websocket)
-        self.user_data.pop(websocket, None)
-        logger.info(f"Client disconnected. Total connections: {len(self.active_connections)}")
+@sio.event
+async def connect(sid, environ):
+    """Handle client connection."""
+    logger.info(f"Client connected: {sid}")
+    client_data[sid] = {
+        "conversation_history": [],
+        "goal": None,
+        "analysis_results": []
+    }
 
-    async def broadcast(self, message: Dict[str, Any]):
-        """Broadcast a message to all connected clients."""
-        for connection in self.active_connections:
-            try:
-                await connection.send_json(message)
-            except Exception as e:
-                logger.error(f"Error broadcasting message: {e}")
-                await self.disconnect(connection)
+@sio.event
+async def disconnect(sid):
+    """Handle client disconnection."""
+    logger.info(f"Client disconnected: {sid}")
+    client_data.pop(sid, None)
 
-    async def send_personal_message(self, message: Dict[str, Any], websocket: WebSocket):
-        """Send a message to a specific client."""
-        try:
-            await websocket.send_json(message)
-        except Exception as e:
-            logger.error(f"Error sending personal message: {e}")
-            await self.disconnect(websocket)
-
-manager = ConnectionManager()
-
-class Message(BaseModel):
-    """Message model."""
-    text: str
-
-@app.websocket("/ws")
-async def websocket_endpoint(websocket: WebSocket):
-    """WebSocket endpoint."""
-    await manager.connect(websocket)
-    
+@sio.on('message')
+async def handle_message(sid, data):
+    """Handle incoming messages."""
     try:
-        while True:
-            try:
-                # Receive message
-                data = await websocket.receive_json()
-                logger.info(f"Received message: {data}")
+        logger.info(f"Received message from {sid}: {data}")
+        
+        # Update conversation history
+        user_data = client_data[sid]
+        user_data["conversation_history"].append({
+            "text": data["text"],
+            "sender": "user",
+            "timestamp": "now"  # Replace with actual timestamp
+        })
 
-                # Update conversation history
-                if "text" in data:
-                    user_data = manager.user_data[websocket]
-                    user_data["conversation_history"].append({
-                        "text": data["text"],
-                        "sender": "user",
-                        "timestamp": "now"  # Replace with actual timestamp
-                    })
+        # Generate response using Social Stockfish
+        response = await generate_response(user_data)
+        user_data["conversation_history"].append(response)
 
-                    # Generate response using Social Stockfish
-                    response = await generate_response(user_data)
-                    user_data["conversation_history"].append(response)
+        # Send response
+        await sio.emit('message', response, room=sid)
 
-                    # Send response
-                    await manager.send_personal_message(
-                        {"type": "message", "data": response},
-                        websocket
-                    )
+        # Generate and send analysis
+        analysis = await generate_analysis(user_data)
+        await sio.emit('analysis', analysis, room=sid)
 
-                    # Generate and send analysis
-                    analysis = await generate_analysis(user_data)
-                    await manager.send_personal_message(
-                        {"type": "analysis", "data": analysis},
-                        websocket
-                    )
+        # Generate and send state updates
+        await send_state_updates(sid)
 
-                    # Generate and send state updates
-                    await send_state_updates(websocket)
+    except Exception as e:
+        logger.error(f"Error handling message: {e}")
+        await sio.emit('error', {"message": str(e)}, room=sid)
 
-                # Update goal
-                elif "goal" in data:
-                    manager.user_data[websocket]["goal"] = data["goal"]
-                    logger.info(f"Updated goal: {data['goal']}")
-
-            except json.JSONDecodeError:
-                logger.error("Invalid JSON received")
-                continue
-
-    except WebSocketDisconnect:
-        manager.disconnect(websocket)
+@sio.on('update_goal')
+async def handle_goal_update(sid, data):
+    """Handle goal updates."""
+    try:
+        client_data[sid]["goal"] = data["goal"]
+        logger.info(f"Updated goal for {sid}: {data['goal']}")
+    except Exception as e:
+        logger.error(f"Error updating goal: {e}")
+        await sio.emit('error', {"message": str(e)}, room=sid)
 
 async def generate_response(user_data: Dict[str, Any]) -> Dict[str, Any]:
     """Generate a response using Social Stockfish."""
@@ -134,7 +106,7 @@ async def generate_analysis(user_data: Dict[str, Any]) -> Dict[str, Any]:
         "alternatives": []
     }
 
-async def send_state_updates(websocket: WebSocket):
+async def send_state_updates(sid: str):
     """Send state exploration and Monte Carlo updates."""
     # Generate state exploration data
     state_data = {
@@ -147,10 +119,7 @@ async def send_state_updates(websocket: WebSocket):
             for i in range(600)
         ]
     }
-    await manager.send_personal_message(
-        {"type": "state_update", "data": state_data},
-        websocket
-    )
+    await sio.emit('state_update', state_data, room=sid)
 
     # Generate Monte Carlo data
     monte_carlo_data = {
@@ -166,20 +135,17 @@ async def send_state_updates(websocket: WebSocket):
             for i in range(600)
         ]
     }
-    await manager.send_personal_message(
-        {"type": "monte_carlo_update", "data": monte_carlo_data},
-        websocket
-    )
+    await sio.emit('monte_carlo_update', monte_carlo_data, room=sid)
 
 async def background_updates():
     """Send periodic background updates to all clients."""
     while True:
-        for websocket in manager.active_connections:
+        for sid in client_data:
             try:
-                await send_state_updates(websocket)
+                await send_state_updates(sid)
             except Exception as e:
                 logger.error(f"Error sending background updates: {e}")
-                manager.disconnect(websocket)
+                client_data.pop(sid, None)
         await asyncio.sleep(3)  # Update every 3 seconds
 
 @app.on_event("startup")
